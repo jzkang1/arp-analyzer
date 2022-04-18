@@ -92,7 +92,7 @@ def doOnePing(destAddr, timeout):
 
     # TODO
     # Create Socket here
-    
+    mySocket = socket()
     
     # TODO END
 
@@ -122,6 +122,7 @@ def ping(host, timeout=1):
         # calculate statistic here
         
         # TODO END
+        x = 1
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ping(sys.argv[1])
