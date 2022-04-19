@@ -51,7 +51,17 @@ def receiveOnePing(mySocket, ID, timeout, destAddr):
 
         # TODO
         # Fetch the ICMP header from the IP packet
+        icmp_header = recPacket[20:28]
+        (packetType, code, check_sum, packet_id, seq) = struct.unpack("bbHHh", icmp_header)
         
+        if packet_id == ID:
+            size_of_double = struct.calcsize("d")
+            byte_start = 28
+            byte_end = 28+size_of_double
+            timeSent = struct.unpack("d", recPacket[byte_start : byte_end])[0]
+            delay = round((timeReceived - timeSent)*1000, 1)
+            return "time={} ms".format(delay)
+
         
         # TODO END
 
@@ -92,7 +102,7 @@ def doOnePing(destAddr, timeout):
 
     # TODO
     # Create Socket here
-    mySocket = socket()
+    mySocket = socket.socket(socket.AF_INET, socket.SOCK_RAW, icmp)
     
     # TODO END
 
@@ -120,9 +130,8 @@ def ping(host, timeout=1):
     except KeyboardInterrupt:
         # TODO
         # calculate statistic here
-        
+        print("\n----------{} ping statistics----------".format(host))
         # TODO END
-        x = 1
 
 if __name__ == "__main__":
     ping(sys.argv[1])
