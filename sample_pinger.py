@@ -6,6 +6,7 @@ import time
 import select
 import socket
 import binascii
+from turtle import rt
 
 ICMP_ECHO_REQUEST = 8
 rtt_min = float('+inf')
@@ -59,8 +60,12 @@ def receiveOnePing(mySocket, ID, timeout, destAddr):
             byte_start = 28
             byte_end = 28+size_of_double
             timeSent = struct.unpack("d", recPacket[byte_start : byte_end])[0]
-            delay = round((timeReceived - timeSent)*1000, 1)
-            return "time={} ms".format(delay)
+            delay = (timeReceived - timeSent)*1000
+            rtt_min = min(rtt_min, delay)
+            rtt_max = max(rtt_max, delay)
+            rtt_sum += delay
+            rtt_cnt += 1
+            return "time={} ms".format(round(delay, 1))
 
         
         # TODO END
@@ -131,6 +136,11 @@ def ping(host, timeout=1):
         # TODO
         # calculate statistic here
         print("\n----------{} ping statistics----------".format(host))
+        print("round-trip min/avg/max {}/{}/{}".format(
+            round(rtt_min, 3),
+            round(rtt_max, 3),
+            round(rtt_sum/rtt_cnt, 3)
+            ))
         # TODO END
 
 if __name__ == "__main__":
