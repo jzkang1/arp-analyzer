@@ -136,10 +136,10 @@ def ping(host, timeout=1):
         # TODO
         # calculate statistic here
         print("\n----------{} ping statistics----------".format(host))
-        print("round-trip min/avg/max {}/{}/{}".format(
+        print("round-trip min/avg/max {}/{}/{} ms".format(
             round(rtt_min, 3),
-            round(rtt_max, 3),
-            round(rtt_sum/rtt_cnt, 3)
+            round(rtt_sum/rtt_cnt, 3),
+            round(rtt_max, 3)
             ))
         # TODO END
 
