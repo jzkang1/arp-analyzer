@@ -65,7 +65,11 @@ def receiveOnePing(mySocket, ID, timeout, destAddr):
             rtt_max = max(rtt_max, delay)
             rtt_sum += delay
             rtt_cnt += 1
-            return "time={} ms".format(round(delay, 1))
+            return "{} bytes from {}; time={} ms".format(
+                len(recPacket),
+                destAddr,
+                round(delay, 1)
+                )
 
         
         # TODO END
