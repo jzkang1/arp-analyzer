@@ -17,8 +17,8 @@ def extract_arp_packet(buf):
     }
 
     operation_types = {
-        "0001" : "request",
-        "0002" : "response"
+        "0001" : "Request",
+        "0002" : "Response"
     }
 
     return {
@@ -36,6 +36,9 @@ def extract_arp_packet(buf):
 def print_arp_exchange(exchange):
     request = exchange["request"]
     response = exchange["response"]
+
+    if request == None or response == None:
+        print("Couldnt print ARP exchange because of missing info")
 
     print("                      +------------------------+------------------------+")
     print("                      |      ARP REQUEST       |      ARP RESPONSE      |")
@@ -57,7 +60,7 @@ def print_arp_exchange(exchange):
     print("Source Protocol Addr  |{:^24s}|{:^24s}|".format(request["source_protocol_addr"], response["source_protocol_addr"]))
     print("                      +------------------------+------------------------+")
     print("Target Protocol Addr  |{:^24s}|{:^24s}|".format(request["target_protocol_addr"], response["target_protocol_addr"]))
-    print("                      +------------------------+------------------------+")
+    print("                      +------------------------+------------------------+\n")
 
 def hex_string_to_mac_address(hex_string):
     return "{}:{}:{}:{}:{}:{}".format(
@@ -78,9 +81,7 @@ def hex_string_to_ip(hex_string):
     )
 
 def main():
-    # file_name = str(input("Enter your pcap file name: "))
-
-    file_name = "arp.pcap"
+    file_name = str(input("Enter your pcap file name: "))
 
     f = None
     pcap = None
@@ -107,7 +108,6 @@ def main():
             continue
 
         arp_packet = extract_arp_packet(buf)
-        print(exchanges)
 
         # arp request
         if buf[20:22].hex() == "0001":
@@ -119,8 +119,6 @@ def main():
         elif buf[20:22].hex() == "0002":
             for exchange in exchanges:
                 arp_request = exchange["request"]
-                print(arp_request["target_protocol_addr"],arp_packet["source_protocol_addr"])
-                print(arp_request["source_protocol_addr"],arp_packet["target_protocol_addr"])
                 if (arp_request["target_protocol_addr"] == arp_packet["source_protocol_addr"] and
                 arp_request["source_protocol_addr"] == arp_packet["target_protocol_addr"]):
                     exchange["response"] = arp_packet
