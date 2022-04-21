@@ -5,7 +5,7 @@ import datetime
 
 def extract_arp_packet(buf):
     hardware_types = {
-            "0001" : "ethernet",
+            "0001" : "Ethernet",
             "0006" : "IEEE 802 Networks",
             "0007" : "ARCNET",
             "000F" : "Frame Relay",
@@ -16,44 +16,66 @@ def extract_arp_packet(buf):
             "0014" : "Serial Line",
     }
 
+    operation_types = {
+        "0001" : "request",
+        "0002" : "response"
+    }
+
     return {
             "hardware_type": hardware_types[buf[14:16].hex()],
-            "protocol_type": buf[16:18].hex(),
-            "hardware_length": buf[18:19].hex(),
-            "protocol_length": buf[19:20].hex(),
-            "operation": buf[20:22].hex(),
-            "source_hardware_addr": buf[22:28].hex(),
-            "source_protocol_addr": buf[28:32].hex(),
-            "target_hardware_addr": buf[32:38].hex(),# (UNKNOWN)
-            "target_protocol_addr": buf[38:42].hex()
+            "protocol_type": "ipv4",
+            "hardware_length": str(int(buf[18:19].hex())),
+            "protocol_length": str(int(buf[19:20].hex())),
+            "operation": operation_types[buf[20:22].hex()] + "({})".format(buf[20:22].hex()),
+            "source_hardware_addr": hex_string_to_mac_address(buf[22:28].hex()),
+            "source_protocol_addr": hex_string_to_ip(buf[28:32].hex()),
+            "target_hardware_addr": hex_string_to_mac_address(buf[32:38].hex()),
+            "target_protocol_addr": hex_string_to_ip(buf[38:42].hex())
     }
 
 def print_arp_exchange(exchange):
-    print(exchange)
     request = exchange["request"]
-    reply = exchange["reply"]
+    response = exchange["response"]
 
     print("                      +------------------------+------------------------+")
-    print("                      |      ARP REQUEST       |       ARP REPLY        |")
+    print("                      |      ARP REQUEST       |      ARP RESPONSE      |")
     print("                      +------------------------+------------------------+")
-    print("Hardware Type         |{:^24s}|{:^24s}|".format(request["hardware_type"], reply["hardware_type"]))
+    print("Hardware Type         |{:^24s}|{:^24s}|".format(request["hardware_type"], response["hardware_type"]))
     print("                      +------------------------+------------------------+")
-    print("Protocol Type         |{:^24s}|{:^24s}|".format(request["protocol_type"], reply["protocol_type"]))
+    print("Protocol Type         |{:^24s}|{:^24s}|".format(request["protocol_type"], response["protocol_type"]))
     print("                      +------------------------+------------------------+")
-    print("Hardware Length       |{:^24s}|{:^24s}|".format(request["hardware_length"], reply["hardware_length"]))
+    print("Hardware Length       |{:^24s}|{:^24s}|".format(request["hardware_length"], response["hardware_length"]))
     print("                      +------------------------+------------------------+")
-    print("Protocol Length       |{:^24s}|{:^24s}|".format(request["protocol_length"], reply["protocol_length"]))
+    print("Protocol Length       |{:^24s}|{:^24s}|".format(request["protocol_length"], response["protocol_length"]))
     print("                      +------------------------+------------------------+")
-    print("Operation             |{:^24s}|{:^24s}|".format(request["operation"], reply["operation"]))
+    print("Operation             |{:^24s}|{:^24s}|".format(request["operation"], response["operation"]))
     print("                      +------------------------+------------------------+")
-    print("Source Hardware Addr  |{:^24s}|{:^24s}|".format(request["source_hardware_addr"], reply["source_hardware_addr"]))
+    print("Source Hardware Addr  |{:^24s}|{:^24s}|".format(request["source_hardware_addr"], response["source_hardware_addr"]))
     print("                      +------------------------+------------------------+")
-    print("Source Protocol Addr  |{:^24s}|{:^24s}|".format(request["source_protocol_addr"], reply["source_protocol_addr"]))
+    print("Target Hardware Addr  |{:^24s}|{:^24s}|".format(request["target_hardware_addr"], response["target_hardware_addr"]))
     print("                      +------------------------+------------------------+")
-    print("Target Hardware Addr  |{:^24s}|{:^24s}|".format(request["target_hardware_addr"], reply["target_hardware_addr"]))
+    print("Source Protocol Addr  |{:^24s}|{:^24s}|".format(request["source_protocol_addr"], response["source_protocol_addr"]))
     print("                      +------------------------+------------------------+")
-    print("Target Protocol Addr  |{:^24s}|{:^24s}|".format(request["target_protocol_addr"], reply["target_protocol_addr"]))
+    print("Target Protocol Addr  |{:^24s}|{:^24s}|".format(request["target_protocol_addr"], response["target_protocol_addr"]))
     print("                      +------------------------+------------------------+")
+
+def hex_string_to_mac_address(hex_string):
+    return "{}:{}:{}:{}:{}:{}".format(
+        hex_string[0:2],
+        hex_string[2:4],
+        hex_string[4:6],
+        hex_string[6:8],
+        hex_string[8:10],
+        hex_string[10:12],
+    )
+
+def hex_string_to_ip(hex_string):
+    return "{}.{}.{}.{}".format(
+        int(hex_string[0:2], 16),
+        int(hex_string[2:4], 16),
+        int(hex_string[4:6], 16),
+        int(hex_string[6:8], 16)
+    )
 
 def main():
     # file_name = str(input("Enter your pcap file name: "))
@@ -85,25 +107,28 @@ def main():
             continue
 
         arp_packet = extract_arp_packet(buf)
+        print(exchanges)
 
         # arp request
         if buf[20:22].hex() == "0001":
             exchanges.append({
                 "request": arp_packet,
-                "reply": None
+                "response": None
             })
-        # arp reply
+        # arp response
         elif buf[20:22].hex() == "0002":
-            print(arp_packet)
             for exchange in exchanges:
                 arp_request = exchange["request"]
-                if (arp_request["target_protocol_addr"] == arp_packet["source_hardware_addr"] and
+                print(arp_request["target_protocol_addr"],arp_packet["source_protocol_addr"])
+                print(arp_request["source_protocol_addr"],arp_packet["target_protocol_addr"])
+                if (arp_request["target_protocol_addr"] == arp_packet["source_protocol_addr"] and
                 arp_request["source_protocol_addr"] == arp_packet["target_protocol_addr"]):
-                    exchange["reply"] = arp_packet
+                    exchange["response"] = arp_packet
+                    break
         
     # print exchange info
-    # for exchange in exchanges:
-        # print_arp_exchange(exchange)
+    for exchange in exchanges:
+        print_arp_exchange(exchange)
 
 if __name__ == "__main__":
     main()
